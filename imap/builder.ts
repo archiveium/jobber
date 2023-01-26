@@ -16,5 +16,9 @@ export async function buildClient(username: string, password: string): Promise<I
     // Wait until client connects and authorizes
     await client.connect();
 
+    client.on('error', (err) => {
+        console.log(`Error occurred: ${err.message}`);
+    });
+
     return client;
 }
