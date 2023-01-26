@@ -5,9 +5,11 @@ import { buildClient } from '../imap/builder';
 import { ImapEmail } from '../interface/email';
 import { insertEmail } from '../database/email';
 import { insertS3Object } from '../s3/email';
+import { logger } from '../utils/logger';
 
 export async function process() {    
-    console.log('Running fetch email job');
+    logger.info('Running fetch email job');
+
     const job = await getJob('email');
     if (job.length > 0) {
         const jobData = job[0];
