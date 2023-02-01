@@ -38,11 +38,12 @@ export function updateFolder(id: number, uidValidity: number, lastUpdatedMsgNo: 
     WHERE id = ${id}`;
 }
 
-export async function createJob(payload: string): Promise<boolean> {
+export async function createJob(payload: string): Promise<number> {
     const unixTimestamp = Math.floor(Date.now() / 1000);
     const result = await sql`INSERT INTO jobs (queue, payload, attempts, reserved_at, available_at, created_at)
-    VALUES ('email', ${payload}, 1, null, ${unixTimestamp}, ${unixTimestamp});`;
-    return result.count === 1;
+    VALUES ('email', ${payload}, 1, null, ${unixTimestamp}, ${unixTimestamp})
+    RETURNING id;`;
+    return result.count > 0 ? result[0].id : 0;
 }
 
 export function acquireJobLock(jobId: number) {

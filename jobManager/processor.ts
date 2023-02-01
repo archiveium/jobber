@@ -30,15 +30,14 @@ export async function process() {
     
         if (startSeq === undefined || endSeq === undefined) {
             // TODO move job to failed_table
-            console.error('Move job to failed_table');
+            logger.error('Move job to failed_table');
 
-            // TODO release lock
-            console.error('Release lock');
+            // TODO release database lock
+            logger.error('TODO Release database lock');
         } else {
-            console.log('Processing job id ' + jobData.id + ' -> startSeq: ' + startSeq + ' endSeq: ' + endSeq + ' for folder ' + folder.name);
+            logger.info(`Processing job ${JSON.stringify(jobData)}`);
             const emails = await getEmails(imapClient, folder, startSeq, endSeq);
             emails.map(async (email: ImapEmail) => {
-                console.log(`uid: ${email.uid}, subject: ${email.subject}`);
                 const emailAddedToDatabase = await insertEmail({
                     messageNumber: email.uid,
                     userId: folder.user_id,
@@ -58,14 +57,14 @@ export async function process() {
 
             const jobDeleted = await deleteJob(jobData.id);
             if (jobDeleted) {
-                console.log(`Deleted job: ${jobData.id}`);
+                logger.info(`Deleted job: ${jobData.id}`);
             } else {
-                console.error(`Unable to delete job: ${jobData.id}`);
+                logger.error(`Unable to delete job: ${jobData.id}`);
             }
 
-            console.log('Finished processing job id ' + jobData.id);
+            logger.info('Finished processing job id ' + jobData.id);
         }
     } else {
-        console.log('Nothing to process');
+        logger.info('Nothing to process');
     }
 }

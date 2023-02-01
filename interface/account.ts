@@ -11,3 +11,11 @@ export interface Account {
     created_at: EpochTimeStamp
     updated_at: EpochTimeStamp
 }
+
+export interface SyncingAccount {
+    id: number;
+    username: string;
+    password: string;
+    user_id: number;
+    provider_id: number;
+}

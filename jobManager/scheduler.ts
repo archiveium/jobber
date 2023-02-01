@@ -4,84 +4,86 @@ import _ from 'lodash';
 import { buildClient } from '../imap/builder';
 import { ImapFlow } from 'imapflow';
 import { ImapFolderStatus, MessageNumber } from '../interface/imap';
+import { logger } from '../utils/logger';
+import { getAllSyncingAccounts } from '../database/account';
+import { getFoldersByUserAndAccount } from '../database/folder';
+import { Folder } from '../interface/folder';
 
 const BATCH_SIZE: number = 100;
 
 export async function schedule() {
-    console.log('Running schedule email job');
-    const job = await getJob('default');
-    if (job.length > 0) {
-        const jobData = job[0];
-        await acquireJobLock(jobData.id);
+    logger.info('Started running scheduler');
 
-        const payloadData = parseDefaultJobPayload(jobData.payload);
-
-        // TODO If account not found, log warning & delete the job
-        const account = await getAccount(payloadData.userId, payloadData.accountId);
-
+    const allSyncingAccounts = await getAllSyncingAccounts();
+    allSyncingAccounts.forEach(async (syncingAccount) => {
         // TODO If authentication fails, disable syncing & send notification to user
-        const imapClient = await buildClient(account.username, account.password);
+        const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
 
-        const folder = await getFolder(payloadData.folder.id);
-        const imapFolderStatus = await getFolderStatusByName(imapClient, folder.name);
-        const imapFolderLastUid = imapFolderStatus.uidNext - 1;
+        const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id);
+        const promises = accountFolders.map((accountFolder) => {
+            return processAccount(accountFolder, imapClient);
+        });
 
-        if (_.isNull(folder.last_updated_msgno)) {
-            if (imapFolderStatus.messages > 0) {
-                const messageNumbers = await buildMessageNumbers(
-                    imapClient,
-                    folder.name,
-                    1,
-                    imapFolderLastUid,
-                );
-                await processMessageNumbers(messageNumbers, folder.id, imapFolderStatus);
-            } else {
-                console.debug('Folder has 0 messages to sync');
-            }
-        } else {
-            if (folder.status_uidvalidity != imapFolderStatus.uidValidity) {
-                console.log('uidvalidity changed');
-            } else if (imapFolderStatus.messages == 0) {
-                console.log('Folder has 0 messages to sync');
-            } else if (folder.last_updated_msgno == imapFolderLastUid) {
-                console.log('Found no new messages to sync');
-            } else {
-                const messageNumbers = await buildMessageNumbers(
-                    imapClient,
-                    folder.name,
-                    folder.last_updated_msgno + 1,
-                    imapFolderLastUid,
-                );
-                await processMessageNumbers(messageNumbers, folder.id, imapFolderStatus);
-            }
-        }
+        await Promise.all(promises);
 
         // log out and close connection
         await imapClient.logout();
+    });
+}
 
-        await deleteJob(jobData.id);
+async function processAccount(accountFolder: Folder, imapClient: ImapFlow): Promise<void> {
+    const folder = await getFolder(accountFolder.id);
+    const imapFolderStatus = await getFolderStatusByName(imapClient, folder.name);
+    const imapFolderLastUid = imapFolderStatus.uidNext - 1;
+
+    if (_.isNull(folder.last_updated_msgno)) {
+        if (imapFolderStatus.messages > 0) {
+            const messageNumbers = await buildMessageNumbers(
+                imapClient,
+                folder.name,
+                1,
+                imapFolderLastUid,
+            );
+            await processMessageNumbers(messageNumbers, folder.id, imapFolderStatus);
+        } else {
+            logger.info(`FolderId ${accountFolder.id} has 0 messages to sync`);
+        }
     } else {
-        console.log('Nothing to process');
+        logger.info(`Message count ${imapFolderStatus.messages} - uidNext ${imapFolderStatus.uidNext}`);
+        if (folder.status_uidvalidity != imapFolderStatus.uidValidity) {
+            logger.warn(`FolderId ${accountFolder.id} uidvalidity changed`);
+        } else if (imapFolderStatus.messages == 0) {
+            logger.info(`FolderId ${accountFolder.id} has 0 messages to sync`);
+        } else if (folder.last_updated_msgno == imapFolderLastUid) {
+            logger.info(`FolderId ${accountFolder.id} has no new messages to sync`);
+        } else {
+            const messageNumbers = await buildMessageNumbers(
+                imapClient,
+                folder.name,
+                folder.last_updated_msgno + 1,
+                imapFolderLastUid,
+            );
+            await processMessageNumbers(messageNumbers, folder.id, imapFolderStatus);
+        }
     }
 }
 
 async function processMessageNumbers(messageNumbers: MessageNumber[], folderId: number, imapFolderStatus: ImapFolderStatus): Promise<void> {
     if (messageNumbers.length > 0) {
-        const jobCreated = await createJob(JSON.stringify({ folderId, messageNumbers }));
-        if (jobCreated) {
-            const updateResult = await updateFolder(
-                folderId,
-                imapFolderStatus.uidValidity,
-                messageNumbers[messageNumbers.length - 1].uid,
-                imapFolderStatus.messages,
-            );
-            if (updateResult.count != 1) {
-                console.error(`Updated inadequate no. of rows: ${updateResult.count}`);
-            }
-        } else {
-            console.error('Failed to create job');
+        const jobId = await createJob(JSON.stringify({ folderId, messageNumbers }));
+        logger.info(`Created job ${jobId} to process ${messageNumbers.length} emails`);
+
+        const updateResult = await updateFolder(
+            folderId,
+            imapFolderStatus.uidValidity,
+            messageNumbers[messageNumbers.length - 1].uid,
+            imapFolderStatus.messages,
+        );
+
+        if (updateResult.count != 1) {
+            logger.error(`Updated inadequate no. of rows: ${updateResult.count}`);
         }
-    }    
+    }
 }
 
 async function buildMessageNumbers(imapClient: ImapFlow, folderName: string, lastUpdatedMsgNo: number, imapFolderLastUid: number): Promise<MessageNumber[]> {
