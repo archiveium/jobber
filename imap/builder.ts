@@ -1,4 +1,5 @@
 import ImapFlow from 'imapflow';
+import { logger } from '../utils/logger';
 
 export async function buildClient(username: string, password: string): Promise<ImapFlow.ImapFlow> {
     const client = new ImapFlow.ImapFlow({
@@ -17,7 +18,7 @@ export async function buildClient(username: string, password: string): Promise<I
     await client.connect();
 
     client.on('error', (err) => {
-        console.log(`Error occurred: ${err.message}`);
+        logger.error(`[Error Event] Error occurred: ${err.message}`);
     });
 
     return client;

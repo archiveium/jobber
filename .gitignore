@@ -1,3 +1,6 @@
 node_modules
 config/development.json
+config/stage.json
+config/production.json
 queries.sql
+*.log

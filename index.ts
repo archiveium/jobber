@@ -2,6 +2,7 @@ import { sql } from './database/index';
 import { process } from './jobManager/processor';
 import { schedule } from './jobManager/scheduler';
 import { CronJob } from 'cron';
+import { logger } from './utils/logger';
 
 async function main() {
     const processorJob = new CronJob(
@@ -29,4 +30,6 @@ async function main() {
     // schedule();
 }
 
-main();
+main().catch((error) => {
+    logger.error(JSON.stringify(error));
+});

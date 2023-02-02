@@ -4,6 +4,7 @@
   "description": "Archiveium scheduler",
   "main": "index.js",
   "scripts": {
+    "stage": "nodemon --exec 'NODE_ENV=stage node -r ts-node/register' ./index.ts -p tsconfig.json",
     "dev": "nodemon --exec 'NODE_ENV=development node -r ts-node/register' ./index.ts -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -3,7 +3,7 @@ import { format, createLogger, transports, Logger } from 'winston';
 let winston: Logger;
 
 // If we're not in production then log to the `console`
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV === 'development') {
   winston = createLogger({
     level: 'info',
     defaultMeta: { service: 'scheduler' },
