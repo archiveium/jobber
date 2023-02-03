@@ -24,15 +24,35 @@ if (process.env.NODE_ENV === 'development') {
 } else {
   winston = createLogger({
     level: 'info',
-    format: format.json(),
     defaultMeta: { service: 'scheduler' },
     transports: [
       //
       // - Write all logs with importance level of `error` or less to `error.log`
       // - Write all logs with importance level of `info` or less to `combined.log`
       //
-      new transports.File({ filename: 'error.log', level: 'error' }),
-      new transports.File({ filename: 'combined.log' }),
+      new transports.File({
+        filename: 'error.log',
+        level: 'error',
+        format: format.combine(
+          format.timestamp({
+            format: 'YY-MM-DD HH:mm:ss',
+          }),
+          format.printf(
+            info => `${info.timestamp} ${info.level}: ${info.message}`
+          ),
+        ),
+      }),
+      new transports.File({
+        filename: 'combined.log',
+        format: format.combine(
+          format.timestamp({
+            format: 'YY-MM-DD HH:mm:ss',
+          }),
+          format.printf(
+            info => `${info.timestamp} ${info.level}: ${info.message}`
+          ),
+        ),        
+      }),
     ],
   });
 }

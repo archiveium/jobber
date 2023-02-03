@@ -1,4 +1,4 @@
-import { getJob, acquireJobLock, getFolder, deleteJob, parseDefaultJobPayload, getAccount, updateFolder, createJob } from '../jobManager/index';
+import { getFolder, updateFolder, createJob } from '../jobManager/index';
 import { getMessageNumbers, getFolderStatusByName } from '../imap/index';
 import _ from 'lodash';
 import { buildClient } from '../imap/builder';
@@ -20,8 +20,8 @@ export async function schedule() {
         const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
 
         const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id);
-        const promises = accountFolders.map((accountFolder) => {
-            return processAccount(accountFolder, imapClient);
+        const promises = accountFolders.map(async (accountFolder) => {
+            return await processAccount(accountFolder, imapClient);
         });
 
         await Promise.all(promises);
