@@ -1,5 +1,5 @@
-export class AccountNotFound extends Error {  
-    constructor (message: string) {
+export class DatabaseUpdateFailed extends Error {
+    constructor(message: string) {
       super(message)
   
       // assign the error class name in your custom error (as a shortcut)

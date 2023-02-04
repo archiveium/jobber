@@ -1,4 +1,4 @@
-import { getFolder, updateFolder, createJob } from '../jobManager/index';
+import { getFolder, updateFolder } from '../jobManager/index';
 import { getMessageNumbers, getFolderStatusByName } from '../imap/index';
 import _ from 'lodash';
 import { buildClient } from '../imap/builder';
@@ -8,6 +8,7 @@ import { logger } from '../utils/logger';
 import { getAllSyncingAccounts } from '../database/account';
 import { getFoldersByUserAndAccount } from '../database/folder';
 import { Folder } from '../interface/folder';
+import { createJob } from '../database/job';
 
 const BATCH_SIZE: number = 100;
 
@@ -44,12 +45,11 @@ async function processAccount(accountFolder: Folder, imapClient: ImapFlow): Prom
                 1,
                 imapFolderLastUid,
             );
-            await processMessageNumbers(messageNumbers, folder.id, imapFolderStatus);
+            await processMessageNumbers(messageNumbers, folder.account_id, folder.id, imapFolderStatus);
         } else {
             logger.info(`FolderId ${accountFolder.id} has 0 messages to sync`);
         }
     } else {
-        logger.info(`Message count ${imapFolderStatus.messages} - uidNext ${imapFolderStatus.uidNext}`);
         if (folder.status_uidvalidity != imapFolderStatus.uidValidity) {
             logger.warn(`FolderId ${accountFolder.id} uidvalidity changed`);
         } else if (imapFolderStatus.messages == 0) {
@@ -63,14 +63,14 @@ async function processAccount(accountFolder: Folder, imapClient: ImapFlow): Prom
                 folder.last_updated_msgno + 1,
                 imapFolderLastUid,
             );
-            await processMessageNumbers(messageNumbers, folder.id, imapFolderStatus);
+            await processMessageNumbers(messageNumbers, folder.account_id, folder.id, imapFolderStatus);
         }
     }
 }
 
-async function processMessageNumbers(messageNumbers: MessageNumber[], folderId: number, imapFolderStatus: ImapFolderStatus): Promise<void> {
+async function processMessageNumbers(messageNumbers: MessageNumber[], accountId: number, folderId: number, imapFolderStatus: ImapFolderStatus): Promise<void> {
     if (messageNumbers.length > 0) {
-        const jobId = await createJob(JSON.stringify({ folderId, messageNumbers }));
+        const jobId = await createJob(JSON.stringify({ accountId, folderId, messageNumbers }));
         logger.info(`Created job ${jobId} to process ${messageNumbers.length} emails`);
 
         const updateResult = await updateFolder(

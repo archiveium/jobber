@@ -3,7 +3,6 @@ import { Folder } from '../interface/folder';
 import { ImapEmail } from '../interface/email';
 import { ImapFolderStatus, MessageNumber } from '../interface/imap';
 import _ from 'lodash';
-import { logger } from '../utils/logger';
 
 export async function getMessageNumbers(client: ImapFlow.ImapFlow, folderName: string, startSeq: number, endSeq: number): Promise<MessageNumber[]> {
     let messageNumbers: MessageNumber[] = [];
@@ -20,7 +19,6 @@ export async function getMessageNumbers(client: ImapFlow.ImapFlow, folderName: s
         }
     } finally {
         lock.release();
-        logger.info('Lock released');
     }
 
     return messageNumbers;
@@ -54,7 +52,6 @@ export async function getEmails(client: ImapFlow.ImapFlow, folder: Folder, start
         }
     } finally {
         lock.release();
-        logger.info('Lock released');
     }
 
     return imapEmails;
@@ -72,7 +69,6 @@ export async function getFolderStatusByName(client: ImapFlow.ImapFlow, name: str
         throw e;
     } finally {
         lock.release();
-        logger.info('Lock released');
     }
 
     return {

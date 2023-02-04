@@ -1,4 +1,5 @@
 import ImapFlow from 'imapflow';
+import { AuthenticationFailed } from '../exception/imap';
 import { logger } from '../utils/logger';
 
 export async function buildClient(username: string, password: string): Promise<ImapFlow.ImapFlow> {
@@ -14,12 +15,16 @@ export async function buildClient(username: string, password: string): Promise<I
         }
     });
 
-    // Wait until client connects and authorizes
-    await client.connect();
-
-    client.on('error', (err) => {
-        logger.error(`[Error Event] Error occurred: ${err.message}`);
-    });
+    try {
+        // Wait until client connects and authorizes
+        await client.connect();
+    } catch (error: any) {
+        logger.error(JSON.stringify(error));
+        if (error.authenticationFailed) {
+            throw new AuthenticationFailed(error.message);
+        }
+        throw error;
+    }
 
     return client;
 }

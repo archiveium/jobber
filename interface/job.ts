@@ -14,6 +14,7 @@ export interface PayloadMessageNumber {
 }
 
 export interface EmailJobPayload {
+    accountId: number;
     folderId: number;
     messageNumbers: Array<PayloadMessageNumber>;
 }
