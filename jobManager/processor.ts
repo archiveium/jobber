@@ -66,7 +66,7 @@ export async function process() {
                 logger.warn(`Deleting job ${jobData.id} since account/folder was deleted`);
                 await deleteInvalidJob(jobData.id);
             } else if (error instanceof AuthenticationFailed) {
-                logger.error(`Authentication failed for User ID ${payloadData.folderId}. Disabling account syncing`);
+                logger.error(`Authentication failed for Account ID ${payloadData.accountId}. Disabling account syncing`);
                 await updateAccountSyncing(payloadData.accountId, false);
                 // release job
                 await releaseJobLock(jobData.id);

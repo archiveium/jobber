@@ -5,10 +5,11 @@ import { buildClient } from '../imap/builder';
 import { ImapFlow } from 'imapflow';
 import { ImapFolderStatus, MessageNumber } from '../interface/imap';
 import { logger } from '../utils/logger';
-import { getAllSyncingAccounts } from '../database/account';
+import { getAllSyncingAccounts, updateAccountSyncing } from '../database/account';
 import { getFoldersByUserAndAccount } from '../database/folder';
 import { Folder } from '../interface/folder';
 import { createJob } from '../database/job';
+import { AuthenticationFailed } from '../exception/imap';
 
 const BATCH_SIZE: number = 100;
 
@@ -17,18 +18,25 @@ export async function schedule() {
 
     const allSyncingAccounts = await getAllSyncingAccounts();
     allSyncingAccounts.forEach(async (syncingAccount) => {
-        // FIXME If authentication fails, disable syncing & send notification to user
-        const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
+        try {
+            const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
+            const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id);
+            const promises = accountFolders.map(async (accountFolder) => {
+                return await processAccount(accountFolder, imapClient);
+            });
 
-        const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id);
-        const promises = accountFolders.map(async (accountFolder) => {
-            return await processAccount(accountFolder, imapClient);
-        });
-
-        await Promise.all(promises);
-
-        // log out and close connection
-        await imapClient.logout();
+            await Promise.all(promises);
+            await imapClient.logout();            
+        } catch (error) {
+            if (error instanceof AuthenticationFailed) {
+                logger.error(`Authentication failed for Account ID ${syncingAccount.id}. Disabling account syncing`);
+                await updateAccountSyncing(syncingAccount.id, false);
+                // TODO send notification to user
+            } else {
+                logger.error(JSON.stringify(error));
+                throw error;
+            }            
+        }
     });
 }
 
