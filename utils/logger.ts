@@ -51,7 +51,7 @@ if (process.env.NODE_ENV === 'development') {
           format.printf(
             info => `${info.timestamp} ${info.level}: ${info.message}`
           ),
-        ),        
+        ),
       }),
     ],
   });

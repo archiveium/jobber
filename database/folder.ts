@@ -15,6 +15,10 @@ export async function getFolder(folderId: number): Promise<Folder> {
         if (folder.deleted) {
             throw new FolderDeleted(`Folder ${folderId} was deleted`);
         }
+
+        // FIXME Throw exception when folder ceases to exist on remove
+        // i.e. folder.deleted_remote = true
+        // Delete job
         return folder;
     }
 

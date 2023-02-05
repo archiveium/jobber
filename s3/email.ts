@@ -70,6 +70,6 @@ export async function deleteS3Object(key: string): Promise<void> {
         await s3Client.send(new DeleteObjectCommand(params));
     } catch (error) {
         logger.error(JSON.stringify(error));
-        throw error;   
+        throw error;
     }
 }

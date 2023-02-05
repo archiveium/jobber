@@ -25,7 +25,7 @@ export async function schedule() {
             });
 
             await Promise.all(promises);
-            await imapClient.logout();            
+            await imapClient.logout();
         } catch (error) {
             if (error instanceof AuthenticationFailed) {
                 logger.error(`Authentication failed for Account ID ${syncingAccount.id}. Disabling account syncing`);
@@ -34,7 +34,7 @@ export async function schedule() {
             } else {
                 logger.error(JSON.stringify(error));
                 throw error;
-            }            
+            }
         }
     });
 }
@@ -58,7 +58,10 @@ async function processAccount(accountFolder: Folder, imapClient: ImapFlow): Prom
         }
     } else {
         if (folder.status_uidvalidity != imapFolderStatus.uidValidity) {
-            logger.warn(`FolderId ${accountFolder.id} uidvalidity changed`);
+            // TODO Migrate scan:provider-folder-changes job from PHP
+            logger.warn(`FolderId ${accountFolder.id} uidvalidity changed.
+            This error should fix itself after scan:provider-folder-changes job runs`);
+            // FIXME Throw Exception
         } else if (imapFolderStatus.messages == 0) {
             logger.info(`FolderId ${accountFolder.id} has 0 messages to sync`);
         } else if (folder.last_updated_msgno == imapFolderLastUid) {

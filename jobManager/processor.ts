@@ -24,18 +24,18 @@ export async function process() {
         const payloadData = parseEmailJobPayload(jobData.payload);
 
         try {
-            const folder = await getFolder(payloadData.folderId);        
+            const folder = await getFolder(payloadData.folderId);
             const account = await getAccount(folder.user_id, folder.account_id);
             const imapClient = await buildClient(account.username, account.password);
-    
+
             // TODO Pass startSeq and endSeq from scheduler
             const startSeq = _.first(payloadData.messageNumbers)?.uid;
             const endSeq = _.last(payloadData.messageNumbers)?.uid;
-        
+
             if (startSeq === undefined || endSeq === undefined) {
                 // TODO move job to failed_table
                 logger.error('Move job to failed_table');
-    
+
                 // TODO release database lock
                 logger.error('TODO Release database lock');
             } else {
@@ -58,9 +58,9 @@ export async function process() {
                         );
                     }
                 });
-    
+
                 await deleteInvalidJob(jobData.id);
-            }            
+            }
         } catch (error) {
             if (error instanceof FolderDeleted || error instanceof AccountDeleted) {
                 logger.warn(`Deleting job ${jobData.id} since account/folder was deleted`);
@@ -73,7 +73,7 @@ export async function process() {
                 // TODO send notification to user
             } else if (error instanceof AccountSyncingPaused) {
                 // TODO Rethink handling of account account when syncing is paused
-                // Avoid db read and write unnecessarily, maybe a separate table 
+                // Avoid db read and write unnecessarily, maybe a separate table
                 // with account and folder id as separate columns
                 logger.warn(`Skipping job: ${error.message}`);
                 // release job
@@ -96,5 +96,5 @@ async function deleteInvalidJob(jobId: number) {
         logger.info(`Deleted job: ${jobId}`);
     } else {
         logger.error(`Unable to delete job: ${jobId}`);
-    }    
+    }
 }

@@ -21,6 +21,7 @@
             {
                 "code": 120
             }
-        ]
+        ],
+        "no-trailing-spaces": "error"
     }
 }

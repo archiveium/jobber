@@ -5,9 +5,9 @@ import { ImapFolderStatus, MessageNumber } from '../interface/imap';
 import _ from 'lodash';
 
 export async function getMessageNumbers(
-    client: ImapFlow.ImapFlow, 
-    folderName: string, 
-    startSeq: number, 
+    client: ImapFlow.ImapFlow,
+    folderName: string,
+    startSeq: number,
     endSeq: number
 ): Promise<MessageNumber[]> {
     let messageNumbers: MessageNumber[] = [];
@@ -30,13 +30,13 @@ export async function getMessageNumbers(
 }
 
 export async function getEmails(
-    client: ImapFlow.ImapFlow, 
-    folder: Folder, 
-    startSeq: number, 
+    client: ImapFlow.ImapFlow,
+    folder: Folder,
+    startSeq: number,
     endSeq: number
 ): Promise<ImapEmail[]> {
     const imapEmails: ImapEmail[] = [];
-    
+
     let lock = await client.getMailboxLock(folder.name);
     try {
         const messages = client.fetch(
