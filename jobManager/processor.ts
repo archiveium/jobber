@@ -1,4 +1,3 @@
-import { getFolder } from '../jobManager/index';
 import { getEmails } from '../imap/index';
 import _ from 'lodash';
 import { buildClient } from '../imap/builder';
@@ -11,6 +10,7 @@ import { AccountDeleted, AccountSyncingPaused } from '../exception/account';
 import { AuthenticationFailed } from '../exception/imap';
 import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
+import { getFolder } from '../database/folder';
 
 export async function process() {
     logger.info('Started running fetch email job');
@@ -66,7 +66,7 @@ export async function process() {
                 logger.warn(`Deleting job ${jobData.id} since account/folder was deleted`);
                 await deleteInvalidJob(jobData.id);
             } else if (error instanceof AuthenticationFailed) {
-                logger.error(`Authentication failed for Account ID ${payloadData.accountId}. Disabling account syncing`);
+                logger.error(`Authentication failed for Account ID ${payloadData.accountId}. Disabling syncing`);
                 await updateAccountSyncing(payloadData.accountId, false);
                 // release job
                 await releaseJobLock(jobData.id);

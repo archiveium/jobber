@@ -1,4 +1,3 @@
-import { getFolder, updateFolder } from '../jobManager/index';
 import { getMessageNumbers, getFolderStatusByName } from '../imap/index';
 import _ from 'lodash';
 import { buildClient } from '../imap/builder';
@@ -6,7 +5,7 @@ import { ImapFlow } from 'imapflow';
 import { ImapFolderStatus, MessageNumber } from '../interface/imap';
 import { logger } from '../utils/logger';
 import { getAllSyncingAccounts, updateAccountSyncing } from '../database/account';
-import { getFoldersByUserAndAccount } from '../database/folder';
+import { getFolder, getFoldersByUserAndAccount, updateFolder } from '../database/folder';
 import { Folder } from '../interface/folder';
 import { createJob } from '../database/job';
 import { AuthenticationFailed } from '../exception/imap';
@@ -22,7 +21,7 @@ export async function schedule() {
             const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
             const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id);
             const promises = accountFolders.map(async (accountFolder) => {
-                return await processAccount(accountFolder, imapClient);
+                return processAccount(accountFolder, imapClient);
             });
 
             await Promise.all(promises);
@@ -76,7 +75,12 @@ async function processAccount(accountFolder: Folder, imapClient: ImapFlow): Prom
     }
 }
 
-async function processMessageNumbers(messageNumbers: MessageNumber[], accountId: number, folderId: number, imapFolderStatus: ImapFolderStatus): Promise<void> {
+async function processMessageNumbers(
+    messageNumbers: MessageNumber[],
+    accountId: number,
+    folderId: number,
+    imapFolderStatus: ImapFolderStatus
+): Promise<void> {
     if (messageNumbers.length > 0) {
         const jobId = await createJob(JSON.stringify({ accountId, folderId, messageNumbers }));
         logger.info(`Created job ${jobId} to process ${messageNumbers.length} emails`);
@@ -94,7 +98,12 @@ async function processMessageNumbers(messageNumbers: MessageNumber[], accountId:
     }
 }
 
-async function buildMessageNumbers(imapClient: ImapFlow, folderName: string, lastUpdatedMsgNo: number, imapFolderLastUid: number): Promise<MessageNumber[]> {
+async function buildMessageNumbers(
+    imapClient: ImapFlow,
+    folderName: string,
+    lastUpdatedMsgNo: number,
+    imapFolderLastUid: number
+): Promise<MessageNumber[]> {
     let messageNumbers = await getMessageNumbers(imapClient, folderName, lastUpdatedMsgNo, imapFolderLastUid);
     messageNumbers = _.sortBy(messageNumbers, ['uid']);
     return messageNumbers.slice(0, BATCH_SIZE);
