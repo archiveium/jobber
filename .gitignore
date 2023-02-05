@@ -1,6 +1,7 @@
 node_modules
+.vscode
 config/development.json
 config/stage.json
 config/production.json
-queries.sql
+*.sql
 *.log
