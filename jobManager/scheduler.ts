@@ -17,7 +17,7 @@ export async function schedule() {
 
     const allSyncingAccounts = await getAllSyncingAccounts();
     allSyncingAccounts.forEach(async (syncingAccount) => {
-        // TODO If authentication fails, disable syncing & send notification to user
+        // FIXME If authentication fails, disable syncing & send notification to user
         const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
 
         const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id);

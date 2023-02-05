@@ -31,7 +31,7 @@ export async function getEmails(client: ImapFlow.ImapFlow, folder: Folder, start
     try {
         const messages = client.fetch(
             `${startSeq}:${endSeq}`,
-            { envelope: true, source: true, bodyStructure: true },
+            { envelope: true, source: true, bodyStructure: true, internalDate: true },
             // @ts-ignore since type definations have the parameters wrong
             { uid: true },
         );

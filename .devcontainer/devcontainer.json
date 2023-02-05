@@ -14,8 +14,9 @@
 			"extensions": [
 				"dbaeumer.vscode-eslint",
 				"christian-kohler.npm-intellisense",
-				"ckolkman.vscode-postgres",
-				"Gruntfuggly.todo-tree"
+				"Gruntfuggly.todo-tree",
+				"mtxr.sqltools",
+				"mtxr.sqltools-driver-pg"
 			]
 		}
 	},

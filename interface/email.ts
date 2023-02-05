@@ -10,7 +10,7 @@ export interface DatabaseEmail {
     userId: number;
     folderId: number;
     messageNumber: number;
-    udate: number;
+    udate: Date;
     hasAttachments: boolean;
     imported: boolean;
     importFailReason?: string;

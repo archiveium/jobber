@@ -48,12 +48,12 @@ export async function process() {
                         folderId: folder.id,
                         imported: true,
                         hasAttachments: email.hasAttachments,
-                        udate: 1234     // TODO Use correct udate
+                        udate: email.internalDate
                     });
                     if (emailAddedToDatabase) {
                         // TODO Rollback database save if S3 insert fails
                         await insertS3Object(
-                            `${folder.user_id}\/${folder.id}\/${email.uid}.eml`,
+                            `${folder.user_id}/${folder.id}/${email.uid}.eml`,
                             email.source,
                         );
                     }
