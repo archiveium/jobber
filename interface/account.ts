@@ -19,3 +19,8 @@ export interface SyncingAccount {
     user_id: number;
     provider_id: number;
 }
+
+export interface DeletedAccount {
+    id: number;
+    user_id: number;
+}
