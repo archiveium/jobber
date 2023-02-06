@@ -8,7 +8,7 @@ import { getAllSyncingAccounts, updateAccountSyncing } from '../database/account
 import { getFolder, getFoldersByUserAndAccount, updateFolder } from '../database/folder';
 import { Folder } from '../interface/folder';
 import { createJob } from '../database/job';
-import { AuthenticationFailed } from '../exception/imap';
+import { IMAPAuthenticationFailed, IMAPUidValidityChanged } from '../exception/imap';
 
 const BATCH_SIZE: number = 100;
 
@@ -27,7 +27,7 @@ export async function schedule() {
             await Promise.all(promises);
             await imapClient.logout();
         } catch (error) {
-            if (error instanceof AuthenticationFailed) {
+            if (error instanceof IMAPAuthenticationFailed) {
                 logger.error(`Authentication failed for Account ID ${syncingAccount.id}. Disabling account syncing`);
                 await updateAccountSyncing(syncingAccount.id, false);
                 // TODO send notification to user
@@ -58,10 +58,10 @@ async function processAccount(accountFolder: Folder, imapClient: ImapFlow): Prom
         }
     } else {
         if (folder.status_uidvalidity != imapFolderStatus.uidValidity) {
-            // TODO Migrate scan:provider-folder-changes job from PHP
+            // FIXME Migrate scan:provider-folder-changes job from PHP
             logger.warn(`FolderId ${accountFolder.id} uidvalidity changed.
             This error should fix itself after scan:provider-folder-changes job runs`);
-            // FIXME Throw Exception
+            throw new IMAPUidValidityChanged(`FolderId ${accountFolder.id} uidvalidity changed`);
         } else if (imapFolderStatus.messages == 0) {
             logger.info(`FolderId ${accountFolder.id} has 0 messages to sync`);
         } else if (folder.last_updated_msgno == imapFolderLastUid) {

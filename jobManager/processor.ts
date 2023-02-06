@@ -5,9 +5,9 @@ import { ImapEmail } from '../interface/email';
 import { insertEmail } from '../database/email';
 import { insertS3Object } from '../s3/email';
 import { logger } from '../utils/logger';
-import { FolderDeleted } from '../exception/folder';
+import { FolderDeleted, FolderDeletedOnRemote } from '../exception/folder';
 import { AccountDeleted, AccountSyncingPaused } from '../exception/account';
-import { AuthenticationFailed } from '../exception/imap';
+import { IMAPAuthenticationFailed } from '../exception/imap';
 import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
 import { getFolder } from '../database/folder';
@@ -62,10 +62,14 @@ export async function process() {
                 await deleteInvalidJob(jobData.id);
             }
         } catch (error) {
-            if (error instanceof FolderDeleted || error instanceof AccountDeleted) {
-                logger.warn(`Deleting job ${jobData.id} since account/folder was deleted`);
+            if (
+                error instanceof FolderDeleted ||
+                error instanceof AccountDeleted ||
+                error instanceof FolderDeletedOnRemote
+            ) {
+                logger.warn(`Deleting job ${jobData.id} since account/folder was deleted locally or on remote`);
                 await deleteInvalidJob(jobData.id);
-            } else if (error instanceof AuthenticationFailed) {
+            } else if (error instanceof IMAPAuthenticationFailed) {
                 logger.error(`Authentication failed for Account ID ${payloadData.accountId}. Disabling syncing`);
                 await updateAccountSyncing(payloadData.accountId, false);
                 // release job

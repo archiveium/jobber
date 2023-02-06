@@ -1,6 +1,6 @@
 import { sql } from '../database/index';
 import { Folder } from '../interface/folder';
-import { FolderDeleted, FolderNotFound } from '../exception/folder';
+import { FolderDeleted, FolderDeletedOnRemote, FolderNotFound } from '../exception/folder';
 
 export async function getFoldersByUserAndAccount(userId: number, accountId: number): Promise<Folder[]> {
     return sql<Folder[]>`SELECT * 
@@ -14,11 +14,9 @@ export async function getFolder(folderId: number): Promise<Folder> {
         const folder = folders[0];
         if (folder.deleted) {
             throw new FolderDeleted(`Folder ${folderId} was deleted`);
+        } else if (folder.deleted_remote) {
+            throw new FolderDeletedOnRemote(`Folder ${folderId} was deleted on remote`);
         }
-
-        // FIXME Throw exception when folder ceases to exist on remove
-        // i.e. folder.deleted_remote = true
-        // Delete job
         return folder;
     }
 
