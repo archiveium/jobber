@@ -12,7 +12,7 @@ import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
 import { getFolder } from '../database/folder';
 
-export async function process() {
+export async function process(): Promise<void> {
     logger.info('Started running fetch email job');
 
     const job = await getJob('email');
@@ -95,7 +95,7 @@ export async function process() {
     }
 }
 
-async function deleteInvalidJob(jobId: number) {
+async function deleteInvalidJob(jobId: number): Promise<void> {
     const jobDeleted = await deleteJob(jobId);
     if (jobDeleted) {
         logger.info(`Deleted job: ${jobId}`);

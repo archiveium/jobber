@@ -42,7 +42,7 @@ const scannerJob = new CronJob(
     'America/Toronto'
 );
 
-async function main() {
+async function main(): Promise<void> {
     processorJob.start();
     // process();
 
