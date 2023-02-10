@@ -4,6 +4,8 @@
   "description": "Archiveium scheduler",
   "main": "index.js",
   "scripts": {
+    "build": "rm -rfv dist && tsc --build",
+    "prod": "NODE_ENV=production node dist/index.js",
     "stage": "nodemon --exec 'TZ=America/Toronto NODE_ENV=stage node -r ts-node/register' ./index.ts -p tsconfig.json",
     "dev": "nodemon --exec 'TZ=America/Toronto NODE_ENV=development node -r ts-node/register' ./index.ts -p tsconfig.json",
     "dev-s3explorer": "npx @smblitz/s3explorer --endpoint http://10.0.0.158:9000 --accessKeyId minio --secretAccessKey minioPassword",
