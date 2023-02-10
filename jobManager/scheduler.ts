@@ -9,33 +9,36 @@ import { getFolder, getFoldersByUserAndAccount, updateFolder } from '../database
 import { Folder } from '../interface/folder';
 import { createJob } from '../database/job';
 import { IMAPAuthenticationFailed, IMAPUidValidityChanged } from '../exception/imap';
+import { FolderDeletedOnRemote } from '../exception/folder';
 
-const BATCH_SIZE: number = 100;
+const BATCH_SIZE: number = 200;
 
 export async function schedule() {
     logger.info('Started running scheduler');
 
     const allSyncingAccounts = await getAllSyncingAccounts();
     allSyncingAccounts.forEach(async (syncingAccount) => {
-        try {
-            const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
-            const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id);
-            const promises = accountFolders.map(async (accountFolder) => {
-                return processAccount(accountFolder, imapClient);
-            });
-
-            await Promise.all(promises);
-            await imapClient.logout();
-        } catch (error) {
-            if (error instanceof IMAPAuthenticationFailed) {
-                logger.error(`Authentication failed for Account ID ${syncingAccount.id}. Disabling account syncing`);
-                await updateAccountSyncing(syncingAccount.id, false);
-                // TODO send notification to user
-            } else {
-                logger.error(JSON.stringify(error));
-                throw error;
+        const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
+        const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id, false);
+        const promises = accountFolders.map(async (accountFolder) => {
+            try {
+                await processAccount(accountFolder, imapClient);
+            } catch (error) {
+                if (error instanceof IMAPAuthenticationFailed) {
+                    logger.error(`Authentication failed for Account ID ${accountFolder.id}. Disabling account syncing`);
+                    await updateAccountSyncing(syncingAccount.id, false);
+                    // TODO send notification to user
+                } else if (error instanceof FolderDeletedOnRemote) {
+                    logger.warn(`Folder ID ${accountFolder.id} was deleted on remote. Skipping it`);
+                } else {
+                    logger.error(JSON.stringify(error));
+                    throw error;
+                }
             }
-        }
+        });
+
+        await Promise.all(promises);
+        await imapClient.logout();
     });
 }
 
@@ -58,9 +61,8 @@ async function processAccount(accountFolder: Folder, imapClient: ImapFlow): Prom
         }
     } else {
         if (folder.status_uidvalidity != imapFolderStatus.uidValidity) {
-            // FIXME Migrate scan:provider-folder-changes job from PHP
             logger.warn(`FolderId ${accountFolder.id} uidvalidity changed.
-            This error should fix itself after scan:provider-folder-changes job runs`);
+            This error should fix itself after scanner job runs`);
             throw new IMAPUidValidityChanged(`FolderId ${accountFolder.id} uidvalidity changed`);
         } else if (imapFolderStatus.messages == 0) {
             logger.info(`FolderId ${accountFolder.id} has 0 messages to sync`);

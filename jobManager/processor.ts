@@ -5,7 +5,7 @@ import { ImapEmail } from '../interface/email';
 import { insertEmail } from '../database/email';
 import { insertS3Object } from '../s3/email';
 import { logger } from '../utils/logger';
-import { FolderDeleted, FolderDeletedOnRemote } from '../exception/folder';
+import { FolderDeleted, FolderDeletedOnRemote, FolderNotFound } from '../exception/folder';
 import { AccountDeleted, AccountSyncingPaused } from '../exception/account';
 import { IMAPAuthenticationFailed } from '../exception/imap';
 import { getAccount, updateAccountSyncing } from '../database/account';
@@ -65,7 +65,8 @@ export async function process() {
             if (
                 error instanceof FolderDeleted ||
                 error instanceof AccountDeleted ||
-                error instanceof FolderDeletedOnRemote
+                error instanceof FolderDeletedOnRemote ||
+                error instanceof FolderNotFound
             ) {
                 logger.warn(`Deleting job ${jobData.id} since account/folder was deleted locally or on remote`);
                 await deleteInvalidJob(jobData.id);

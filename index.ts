@@ -3,6 +3,7 @@ import { process } from './jobManager/processor';
 import { schedule } from './jobManager/scheduler';
 import { CronJob } from 'cron';
 import { deletor } from './jobManager/deletor';
+import { scanner } from './jobManager/scanner';
 
 const processorJob = new CronJob(
     '* * * * *',
@@ -31,6 +32,15 @@ const deletorJob = new CronJob(
     false,
     'America/Toronto'
 );
+const scannerJob = new CronJob(
+    '* * * * *',
+    scanner,
+    async function () {
+        await sql.end();
+    },
+    false,
+    'America/Toronto'
+);
 
 async function main() {
     processorJob.start();
@@ -41,6 +51,9 @@ async function main() {
 
     deletorJob.start();
     // deletor();
+
+    scannerJob.start();
+    // scanner();
 }
 
 main();

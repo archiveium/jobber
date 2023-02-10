@@ -11,3 +11,11 @@ export interface Folder {
     created_at: EpochTimeStamp
     updated_at: EpochTimeStamp
 }
+
+export interface InsertFolder {
+    user_id: number
+    account_id: number
+    name: string
+    status_uidvalidity: number
+    status_messages: number
+}

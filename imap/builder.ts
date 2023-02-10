@@ -1,5 +1,5 @@
 import ImapFlow from 'imapflow';
-import { AuthenticationFailed } from '../exception/imap';
+import { IMAPAuthenticationFailed } from '../exception/imap';
 import { logger } from '../utils/logger';
 
 export async function buildClient(username: string, password: string): Promise<ImapFlow.ImapFlow> {
@@ -21,7 +21,7 @@ export async function buildClient(username: string, password: string): Promise<I
     } catch (error: any) {
         logger.error(JSON.stringify(error));
         if (error.authenticationFailed) {
-            throw new AuthenticationFailed(error.message);
+            throw new IMAPAuthenticationFailed(error.message);
         }
         throw error;
     }

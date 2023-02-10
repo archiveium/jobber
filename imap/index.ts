@@ -1,4 +1,4 @@
-import ImapFlow from 'imapflow';
+import ImapFlow, { ListResponse } from 'imapflow';
 import { Folder } from '../interface/folder';
 import { ImapEmail } from '../interface/email';
 import { ImapFolderStatus, MessageNumber } from '../interface/imap';
@@ -87,4 +87,16 @@ export async function getFolderStatusByName(client: ImapFlow.ImapFlow, name: str
         uidNext: status.uidNext,
         uidValidity: status.uidValidity,
     };
+}
+
+export async function getAllIMAPFolders(client: ImapFlow.ImapFlow): Promise<ListResponse[]> {
+    const options = {
+        statusQuery: {
+            uidValidity: true,
+            messages: true,
+        }
+    };
+
+    // @ts-ignore since type definations have the parameters wrong
+    return client.list(options);
 }
