@@ -4,7 +4,10 @@
       "requireCleanWorkingDir": false
     },
     "npm": {
-      "publish": false
+      "publish": false,
+      "versionArgs": [
+        "--allow-same-version"
+      ]
     },
     "github": {
       "release": false
