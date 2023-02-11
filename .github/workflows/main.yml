@@ -52,7 +52,10 @@ jobs:
           node-version: 16.x
           cache: 'npm'
       - run: npm ci
-      - run: npm run release
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          npm run release
 
   docker:
     name: Build & Deploy Docker Image
