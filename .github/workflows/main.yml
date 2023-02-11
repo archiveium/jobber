@@ -11,18 +11,32 @@ on:
 
 jobs:
   lint:
-    name: Linter
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 16.x
         uses: actions/setup-node@v3
         with:
           node-version: 16.x
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
+
+  build:
+    name: Build
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'npm'
+      - run: npm ci
       - run: npm run build
       # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v1
