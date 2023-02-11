@@ -1,6 +1,6 @@
 {
   "name": "archiveium-scheduler",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Archiveium scheduler",
   "main": "index.js",
   "scripts": {
