@@ -79,6 +79,7 @@ jobs:
         run: |
           echo $RELEASE_VERSION
           echo ${{ env.RELEASE_VERSION }}
+          echo ${{ github.ref_name }}
       # - name: Build
       #   uses: docker/build-push-action@v3
       #   with:
