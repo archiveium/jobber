@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "rm -rfv dist && tsc --build",
-    "prod": "NODE_ENV=production node dist/index.js",
+    "prod": "NODE_ENV=production node index.js",
     "release": "release-it --ci --config release-it.json",
     "release-dry-run": "release-it --ci --config release-it.json --dry-run",
     "stage": "nodemon --exec 'TZ=America/Toronto NODE_ENV=stage node -r ts-node/register' ./index.ts -p tsconfig.json",

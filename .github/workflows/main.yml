@@ -78,17 +78,13 @@ jobs:
         run: |
           version=$(node -p "require('./package.json').version")
           echo "RELEASE_VERSION=$version" >> $GITHUB_ENV
-      - name: Display Release Version
-        run: |
-          echo $RELEASE_VERSION
-          echo ${{ env.RELEASE_VERSION }}
-      # - name: Build
-      #   uses: docker/build-push-action@v3
-      #   with:
-      #     context: .
-      #     platforms: |-
-      #         linux/amd64
-      #         linux/arm64
-      #     file: ./docker/prod/Dockerfile
-      #     push: true
-      #     tags: archiveium/jobber:${{ env.APP_VERSION }},archiveium/jobber:latest
+      - name: Push to Docker
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: |-
+              linux/amd64
+              linux/arm64
+          file: Dockerfile
+          push: true
+          tags: archiveium/jobber:${{ env.RELEASE_VERSION }},archiveium/jobber:latest
