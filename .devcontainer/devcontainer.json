@@ -16,7 +16,8 @@
 				"christian-kohler.npm-intellisense",
 				"Gruntfuggly.todo-tree",
 				"mtxr.sqltools",
-				"mtxr.sqltools-driver-pg"
+				"mtxr.sqltools-driver-pg",
+				"cschleiden.vscode-github-actions"
 			]
 		}
 	},
