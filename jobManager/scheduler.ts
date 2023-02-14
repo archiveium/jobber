@@ -8,12 +8,12 @@ import { getAllSyncingAccounts, updateAccountSyncing } from '../database/account
 import { getFolder, getFoldersByUserAndAccount, updateFolder } from '../database/folder';
 import { Folder } from '../interface/folder';
 import { createJob } from '../database/job';
-import { IMAPAuthenticationFailed, IMAPUidValidityChanged } from '../exception/imap';
+import { IMAPAuthenticationFailed, IMAPTooManyRequests, IMAPUidValidityChanged } from '../exception/imap';
 import { FolderDeletedOnRemote } from '../exception/folder';
 
 const BATCH_SIZE: number = 200;
 
-export async function schedule() {
+export async function schedule(): Promise<void> {
     logger.info('Started running scheduler');
 
     const allSyncingAccounts = await getAllSyncingAccounts();
@@ -24,7 +24,11 @@ export async function schedule() {
             try {
                 await processAccount(accountFolder, imapClient);
             } catch (error) {
-                if (error instanceof IMAPAuthenticationFailed) {
+                if (error instanceof IMAPTooManyRequests) {
+                    logger.warn(`Too many requests for Account ID: ${accountFolder.account_id}, skipping account. 
+                    Error: ${error.message}`);
+                    // TODO Add logic to backoff for a while before attempting again
+                } else if (error instanceof IMAPAuthenticationFailed) {
                     logger.error(`Authentication failed for Account ID ${accountFolder.id}. Disabling account syncing`);
                     await updateAccountSyncing(syncingAccount.id, false);
                     // TODO send notification to user

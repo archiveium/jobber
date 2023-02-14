@@ -7,11 +7,12 @@ import { insertS3Object } from '../s3/email';
 import { logger } from '../utils/logger';
 import { FolderDeleted, FolderDeletedOnRemote, FolderNotFound } from '../exception/folder';
 import { AccountDeleted, AccountSyncingPaused } from '../exception/account';
-import { IMAPAuthenticationFailed } from '../exception/imap';
+import { IMAPAuthenticationFailed, IMAPTooManyRequests } from '../exception/imap';
 import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
 import { getFolder } from '../database/folder';
 
+// FIXME Add a progress bar to show how many emails have been imported for each account
 export async function process(): Promise<void> {
     logger.info('Started running fetch email job');
 
@@ -51,7 +52,8 @@ export async function process(): Promise<void> {
                         udate: email.internalDate
                     });
                     if (emailAddedToDatabase) {
-                        // TODO Rollback database save if S3 insert fails
+                        // FIXME Rollback database save if S3 insert fails
+                        // FIXME Test error logging when region is missing
                         await insertS3Object(
                             `${folder.user_id}/${folder.id}/${email.uid}.eml`,
                             email.source,
@@ -70,6 +72,10 @@ export async function process(): Promise<void> {
             ) {
                 logger.warn(`Deleting job ${jobData.id} since account/folder was deleted locally or on remote`);
                 await deleteInvalidJob(jobData.id);
+            } else if (error instanceof IMAPTooManyRequests) {
+                logger.warn(`Too many requests for Job ID: ${jobData.id} - Error: ${error.message}`);
+                // release job
+                await releaseJobLock(jobData.id);
             } else if (error instanceof IMAPAuthenticationFailed) {
                 logger.error(`Authentication failed for Account ID ${payloadData.accountId}. Disabling syncing`);
                 await updateAccountSyncing(payloadData.accountId, false);
