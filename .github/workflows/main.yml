@@ -29,7 +29,7 @@ jobs:
               workflow_id: 'main.yml',
               ref: 'main',
               inputs: {
-                jobberVersion: ${{ env.RELEASE_VERSION }}
+                jobberVersion: '${{ env.RELEASE_VERSION }}'
               },
             })
   # lint:
