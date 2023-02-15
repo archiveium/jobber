@@ -28,6 +28,9 @@ jobs:
               repo: 'deployer',
               workflow_id: 'main.yml',
               ref: 'main',
+              inputs: {
+                jobberVersion: ${{ env.RELEASE_VERSION }}
+              },
             })
   # lint:
   #   name: Lint
