@@ -12,7 +12,7 @@ import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
 import { getFolder } from '../database/folder';
 
-// FIXME Add a progress bar to show how many emails have been imported for each account
+// TODO Add a progress bar to show how many emails have been imported for each account
 export async function process(): Promise<void> {
     logger.info('Started running fetch email job');
 

@@ -32,17 +32,16 @@ export async function getFolder(folderId: number): Promise<Folder> {
 }
 
 export async function insertFolder(folder: InsertFolder): Promise<number> {
-    const unixTimestamp = Math.floor(Date.now() / 1000);
+    const timestampInSeconds = Math.floor(Date.now() / 1000);
     const result = await sql`INSERT INTO folders 
-    (user_id, account_id, name, status_uidvalidity, status_messages, created_at, updated_at)
+    (user_id, account_id, name, status_uidvalidity, status_messages, created_at)
     VALUES (
         ${folder.user_id}, 
         ${folder.account_id}, 
         ${folder.name}, 
         ${folder.status_uidvalidity}, 
         ${folder.status_messages}, 
-        ${unixTimestamp}, 
-        ${unixTimestamp}
+        ${timestampInSeconds}
     ) RETURNING id;`;
 
     if (result.count === 1) {

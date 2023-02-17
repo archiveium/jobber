@@ -26,10 +26,7 @@ if (process.env.NODE_ENV === 'development') {
     level: 'info',
     defaultMeta: { service: 'scheduler' },
     transports: [
-      //
-      // - Write all logs with importance level of `error` or less to `error.log`
-      // - Write all logs with importance level of `info` or less to `combined.log`
-      //
+      // TODO Put logs under /logs directory
       new transports.File({
         filename: 'error.log',
         level: 'error',

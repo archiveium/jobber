@@ -5,6 +5,8 @@ import { CronJob } from 'cron';
 import { deletor } from './jobManager/deletor';
 import { scanner } from './jobManager/scanner';
 
+// TODO Add release-it plugin for managing changelog.md
+// TODO Trigger 1 job for each jobber container
 const processorJob = new CronJob(
     '* * * * *',
     process,
