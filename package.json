@@ -24,6 +24,7 @@
     "express": "4.18.2",
     "imapflow": "1.0.119",
     "lodash": "4.17.21",
+    "luxon": "^3.2.1",
     "phpunserialize": "1.3.0",
     "postgres": "3.3.3",
     "winston": "^3.8.2"

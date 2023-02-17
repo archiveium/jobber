@@ -2,6 +2,7 @@ import { sql } from '../database/index';
 import { Folder, InsertFolder } from '../interface/folder';
 import { FolderDeleted, FolderDeletedOnRemote, FolderNotFound } from '../exception/folder';
 import { DatabaseInsertFailed, DatabaseUpdateFailed } from '../exception/database';
+import { DateTime } from 'luxon';
 
 export async function getFoldersByUserAndAccount(
     userId: number,
@@ -32,7 +33,7 @@ export async function getFolder(folderId: number): Promise<Folder> {
 }
 
 export async function insertFolder(folder: InsertFolder): Promise<number> {
-    const timestampInSeconds = Math.floor(Date.now() / 1000);
+    const dateTime = DateTime.now().toString();
     const result = await sql`INSERT INTO folders 
     (user_id, account_id, name, status_uidvalidity, status_messages, created_at)
     VALUES (
@@ -41,7 +42,7 @@ export async function insertFolder(folder: InsertFolder): Promise<number> {
         ${folder.name}, 
         ${folder.status_uidvalidity}, 
         ${folder.status_messages}, 
-        ${timestampInSeconds}
+        ${dateTime}
     ) RETURNING id;`;
 
     if (result.count === 1) {
