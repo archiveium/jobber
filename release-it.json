@@ -1,6 +1,6 @@
 {
   "git": {
-    "commitMessage": "chore: release v${version}",
+    "commitMessage": "chore: release ${version}",
     "requireCleanWorkingDir": false
   },
   "npm": {
@@ -10,7 +10,7 @@
     ]
   },
   "github": {
-    "release": false
+    "release": true
   },
   "plugins": {
     "@release-it/bumper": {
