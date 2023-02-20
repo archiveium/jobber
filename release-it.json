@@ -10,7 +10,8 @@
     ]
   },
   "github": {
-    "release": true
+    "release": true,
+    "tokenRef": "PERSONAL_ACCESS_TOKEN"
   },
   "plugins": {
     "@release-it/bumper": {
