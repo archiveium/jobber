@@ -26,9 +26,9 @@ if (process.env.NODE_ENV === 'development') {
     level: 'info',
     defaultMeta: { service: 'scheduler' },
     transports: [
-      // TODO Put logs under /logs directory
       new transports.File({
         filename: 'error.log',
+        dirname: 'logs',
         level: 'error',
         format: format.combine(
           format.timestamp({
@@ -41,6 +41,7 @@ if (process.env.NODE_ENV === 'development') {
       }),
       new transports.File({
         filename: 'combined.log',
+        dirname: 'logs',
         format: format.combine(
           format.timestamp({
             format: 'YY-MM-DD HH:mm:ss',
