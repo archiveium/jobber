@@ -1,6 +1,6 @@
 {
   "name": "archiveium-jobber",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Archiveium jobber",
   "main": "index.js",
   "scripts": {
