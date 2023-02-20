@@ -1,7 +1,7 @@
 {
   "name": "archiveium-jobber",
-  "version": "0.0.10",
-  "description": "Archiveium Jobber",
+  "version": "0.0.11",
+  "description": "Archiveium jobber",
   "main": "index.js",
   "scripts": {
     "build": "rm -rfv dist && tsc --build",
