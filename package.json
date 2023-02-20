@@ -1,7 +1,7 @@
 {
-  "name": "archiveium-scheduler",
+  "name": "archiveium-jobber",
   "version": "0.0.10",
-  "description": "Archiveium scheduler",
+  "description": "Archiveium Jobber",
   "main": "index.js",
   "scripts": {
     "build": "rm -rfv dist && tsc --build",

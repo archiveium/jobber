@@ -17,6 +17,14 @@ export async function getFoldersByUserAndAccount(
         account_id = ${accountId}`;
 }
 
+export async function getDeletedFoldersByUserAndAccount(userId: number, accountId: number): Promise<Folder[]> {
+    return sql<Folder[]>`SELECT * 
+    FROM folders 
+    WHERE user_id = ${userId} and 
+        deleted = true and 
+        account_id = ${accountId}`;
+}
+
 export async function getFolder(folderId: number): Promise<Folder> {
     const folders = await sql<Folder[]>`SELECT * FROM folders WHERE id = ${folderId}`;
     if (folders.length > 0) {
