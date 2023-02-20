@@ -5,4 +5,5 @@ config/development.json
 config/stage.json
 config/production.json
 *.sql
-*.log
+*.txt
+logs
