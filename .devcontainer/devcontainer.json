@@ -16,6 +16,10 @@
 			]
 		}
 	},
+	"forwardPorts": [
+		// For s3explorer package. Refer dev-s3explorer script
+		3000
+	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "npm install",
 	"remoteUser": "node"
