@@ -1,7 +1,7 @@
 import postgres from 'postgres';
 import config from 'config';
+import { DatabaseConfig } from '../interface/config';
 
-// TODO Remove 'any' usage
-const dbConfig = config.get('database') as any;
+const dbConfig = config.get<DatabaseConfig>('database');
 
 export const sql = postgres({...dbConfig});
