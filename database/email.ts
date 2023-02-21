@@ -1,8 +1,8 @@
 import { DateTime } from 'luxon';
-import { sql } from '../database/index';
+import { Sql } from 'postgres';
 import { DatabaseEmail } from '../interface/email';
 
-export async function insertEmail(email: DatabaseEmail): Promise<boolean> {
+export async function insertEmail(email: DatabaseEmail, sql: Sql): Promise<boolean> {
     const dateTime = DateTime.now().toString();
     const importFailReason = email.importFailReason ? email.importFailReason : null;
     const result = await sql`INSERT INTO emails 

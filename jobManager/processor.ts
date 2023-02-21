@@ -11,6 +11,8 @@ import { IMAPAuthenticationFailed, IMAPTooManyRequests } from '../exception/imap
 import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
 import { getFolder } from '../database/folder';
+import { Folder } from '../interface/folder';
+import { sql } from '../database';
 
 // TODO Add a progress bar to show how many emails have been imported for each account
 export async function process(): Promise<void> {
@@ -42,24 +44,11 @@ export async function process(): Promise<void> {
             } else {
                 logger.info(`Processing job ${JSON.stringify(jobData)}`);
                 const emails = await getEmails(imapClient, folder, startSeq, endSeq);
-                emails.map(async (email: ImapEmail) => {
-                    const emailAddedToDatabase = await insertEmail({
-                        messageNumber: email.uid,
-                        userId: folder.user_id,
-                        folderId: folder.id,
-                        imported: true,
-                        hasAttachments: email.hasAttachments,
-                        udate: email.internalDate
-                    });
-                    if (emailAddedToDatabase) {
-                        // FIXME Rollback database save if S3 insert fails
-                        // FIXME Test error logging when region is missing
-                        await insertS3Object(
-                            `${folder.user_id}/${folder.id}/${email.uid}.eml`,
-                            email.source,
-                        );
-                    }
+
+                const promises = emails.map((email: ImapEmail) => {
+                    return insertToDatabaseAndS3(email, folder);
                 });
+                await Promise.all(promises);
 
                 await deleteInvalidJob(jobData.id);
             }
@@ -70,7 +59,11 @@ export async function process(): Promise<void> {
                 error instanceof FolderDeletedOnRemote ||
                 error instanceof FolderNotFound
             ) {
-                logger.warn(`Deleting job ${jobData.id} since account/folder was deleted locally or on remote`);
+                logger.warn(`Deleting job since account/folder was deleted locally or on remote`, {
+                    jobId: jobData.id,
+                    folderId: payloadData.folderId,
+                    accountId: payloadData.accountId
+                });
                 await deleteInvalidJob(jobData.id);
             } else if (error instanceof IMAPTooManyRequests) {
                 logger.warn(`Too many requests for Job ID: ${jobData.id} - Error: ${error.message}`);
@@ -99,6 +92,23 @@ export async function process(): Promise<void> {
     } else {
         logger.info('Nothing to process');
     }
+}
+
+async function insertToDatabaseAndS3(email: ImapEmail, folder: Folder): Promise<void> {
+    await sql.begin(async sql => {
+        await insertEmail({
+            messageNumber: email.uid,
+            userId: folder.user_id,
+            folderId: folder.id,
+            imported: true,
+            hasAttachments: email.hasAttachments,
+            udate: email.internalDate
+        }, sql);
+        await insertS3Object(
+            `${folder.user_id}/${folder.id}/${email.uid}.eml`,
+            email.source,
+        );
+    });
 }
 
 async function deleteInvalidJob(jobId: number): Promise<void> {
