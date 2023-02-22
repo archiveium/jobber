@@ -5,7 +5,18 @@
 	},
 	"customizations": {
 		"vscode": {
-			"settings": {},
+			"settings": {
+				"todo-tree.general.tags": [
+					"BUG",
+					"HACK",
+					"FIXME",
+					"TODO",
+					"XXX",
+					"[ ]",
+					"[x]",
+					"TEST"
+				]
+			},
 			"extensions": [
 				"dbaeumer.vscode-eslint",
 				"christian-kohler.npm-intellisense",
