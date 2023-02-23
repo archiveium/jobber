@@ -1,6 +1,5 @@
 import ImapFlow from 'imapflow';
-import { IMAPAuthenticationFailed, IMAPTooManyRequests } from '../exception/imap';
-import { logger } from '../utils/logger';
+import { IMAPAuthenticationFailed, IMAPGenericException, IMAPTooManyRequests } from '../exception/imap';
 
 export async function buildClient(username: string, password: string): Promise<ImapFlow.ImapFlow> {
     const client = new ImapFlow.ImapFlow({
@@ -21,11 +20,11 @@ export async function buildClient(username: string, password: string): Promise<I
     } catch (error: any) {
         if (error.response && error.response.includes('Too many simultaneous connections')) {
             throw new IMAPTooManyRequests(error.response);
-        }
-        if (error.authenticationFailed) {
+        } else if (error.authenticationFailed) {
             throw new IMAPAuthenticationFailed(error.response);
+        } else if (error instanceof Error) {
+            throw new IMAPGenericException(error.message);
         }
-        logger.error(JSON.stringify(error));
         throw error;
     }
 

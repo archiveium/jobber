@@ -3,6 +3,7 @@ import { Folder } from '../interface/folder';
 import { ImapEmail } from '../interface/email';
 import { ImapFolderStatus, MessageNumber } from '../interface/imap';
 import _ from 'lodash';
+import { logger } from '../utils/logger';
 
 export async function getMessageNumbers(
     client: ImapFlow.ImapFlow,
@@ -75,7 +76,7 @@ export async function getFolderStatusByName(client: ImapFlow.ImapFlow, name: str
         // @ts-ignore since type definations have the parameters wrong
         status = await client.status(name, { messages: true, uidNext: true, uidValidity: true });
     } catch (e) {
-        console.error(e);
+        logger.error(`[getFolderStatusByName] ${JSON.stringify(e)}`);
         throw e;
     } finally {
         lock.release();

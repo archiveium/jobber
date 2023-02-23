@@ -7,7 +7,7 @@ import { insertS3Object } from '../s3/email';
 import { logger } from '../utils/logger';
 import { FolderDeleted, FolderDeletedOnRemote, FolderNotFound } from '../exception/folder';
 import { AccountDeleted, AccountSyncingPaused } from '../exception/account';
-import { IMAPAuthenticationFailed, IMAPTooManyRequests } from '../exception/imap';
+import { IMAPAuthenticationFailed, IMAPGenericException, IMAPTooManyRequests } from '../exception/imap';
 import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
 import { getFolder } from '../database/folder';
@@ -59,6 +59,8 @@ export async function process(): Promise<void> {
                 error instanceof FolderDeletedOnRemote ||
                 error instanceof FolderNotFound
             ) {
+                // FIXME Check why this error is thrown when re-processing a job
+                logger.warn(error.message);
                 logger.warn(`Deleting job since account/folder was deleted locally or on remote`, {
                     jobId: jobData.id,
                     folderId: payloadData.folderId,
@@ -66,15 +68,16 @@ export async function process(): Promise<void> {
                 });
                 await deleteInvalidJob(jobData.id);
             } else if (error instanceof IMAPTooManyRequests) {
-                logger.warn(`Too many requests for Job ID: ${jobData.id} - Error: ${error.message}`);
-                // release job
+                logger.warn(`Too many requests for Job ID: ${jobData.id}. Skipping job`);
                 await releaseJobLock(jobData.id);
             } else if (error instanceof IMAPAuthenticationFailed) {
                 logger.error(`Authentication failed for Account ID ${payloadData.accountId}. Disabling syncing`);
                 await updateAccountSyncing(payloadData.accountId, false);
-                // release job
                 await releaseJobLock(jobData.id);
                 // TODO send notification to user
+            } else if (error instanceof IMAPGenericException) {
+                logger.error(`${error.message} for Job ID: ${jobData.id}. Skipping job`);
+                await releaseJobLock(jobData.id);
             } else if (error instanceof AccountSyncingPaused) {
                 // TODO Rethink handling of account account when syncing is paused
                 // Avoid db read and write unnecessarily, maybe a separate table
@@ -83,7 +86,7 @@ export async function process(): Promise<void> {
                 // release job
                 await releaseJobLock(jobData.id);
             } else {
-                logger.error(JSON.stringify(error));
+                logger.error(`[process]` + JSON.stringify(error));
                 throw error;
             }
         }

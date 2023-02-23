@@ -8,7 +8,12 @@ import { getAllSyncingAccounts, updateAccountSyncing } from '../database/account
 import { getFolder, getFoldersByUserAndAccount, updateFolder } from '../database/folder';
 import { Folder } from '../interface/folder';
 import { createJob } from '../database/job';
-import { IMAPAuthenticationFailed, IMAPTooManyRequests, IMAPUidValidityChanged } from '../exception/imap';
+import {
+    IMAPAuthenticationFailed,
+    IMAPGenericException,
+    IMAPTooManyRequests,
+    IMAPUidValidityChanged,
+} from '../exception/imap';
 import { FolderDeletedOnRemote } from '../exception/folder';
 
 const BATCH_SIZE: number = 200;
@@ -18,24 +23,46 @@ export async function schedule(): Promise<void> {
 
     const allSyncingAccounts = await getAllSyncingAccounts();
     allSyncingAccounts.forEach(async (syncingAccount) => {
-        const imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
+        let imapClient: ImapFlow;
+        try {
+            imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
+        } catch (error) {
+            if (error instanceof IMAPTooManyRequests) {
+                logger.error(`Too many requests for Account ID: ${syncingAccount.id}. Skipping account`);
+                // TODO Add logic to backoff for a while before attempting again
+                return;
+            } else if (error instanceof IMAPAuthenticationFailed) {
+                logger.error(`Authentication failed for Account ID ${syncingAccount.id}. Disabling account syncing`);
+                await updateAccountSyncing(syncingAccount.id, false);
+                // TODO send notification to user
+                return;
+            } else if (error instanceof IMAPGenericException) {
+                logger.error(`${error.message} for Account ID: ${syncingAccount.id}. Skipping account`);
+                // TODO Add logic to backoff for a while before attempting again
+                return;
+            }
+            throw error;
+        }
+
         const accountFolders = await getFoldersByUserAndAccount(syncingAccount.user_id, syncingAccount.id, false);
         const promises = accountFolders.map(async (accountFolder) => {
             try {
                 await processAccount(accountFolder, imapClient);
             } catch (error) {
                 if (error instanceof IMAPTooManyRequests) {
-                    logger.warn(`Too many requests for Account ID: ${accountFolder.account_id}, skipping account. 
-                    Error: ${error.message}`);
+                    logger.error(`Too many requests for Account ID: ${accountFolder.account_id}. Skipping account`);
                     // TODO Add logic to backoff for a while before attempting again
                 } else if (error instanceof IMAPAuthenticationFailed) {
                     logger.error(`Authentication failed for Account ID ${accountFolder.id}. Disabling account syncing`);
                     await updateAccountSyncing(syncingAccount.id, false);
                     // TODO send notification to user
                 } else if (error instanceof FolderDeletedOnRemote) {
-                    logger.warn(`Folder ID ${accountFolder.id} was deleted on remote. Skipping it`);
+                    logger.warn(`Folder ID ${accountFolder.id} was deleted on remote. Skipping account`);
+                } else if (error instanceof IMAPGenericException) {
+                    logger.error(`${error.message} for Account ID: ${accountFolder.id}. Skipping account`);
+                    // TODO Add logic to backoff for a while before attempting again
                 } else {
-                    logger.error(JSON.stringify(error));
+                    logger.error(`[schedule]` + JSON.stringify(error));
                     throw error;
                 }
             }

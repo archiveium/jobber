@@ -7,7 +7,7 @@ import { getFoldersByUserAndAccount, insertFolder, softDeleteFolder, updateFolde
 import { Folder } from '../interface/folder';
 import { ImapFlow, ListResponse } from 'imapflow';
 import _ from 'lodash';
-import { IMAPTooManyRequests } from '../exception/imap';
+import { IMAPGenericException, IMAPTooManyRequests } from '../exception/imap';
 
 export async function scanner(): Promise<void> {
     logger.info('Started running scanner');
@@ -22,7 +22,7 @@ export async function scanner(): Promise<void> {
     logger.info('Finished running scanner');
 }
 
-// TODO Add a test case where one of the localfolder isn't processed
+// TEST Add a test case where one of the localfolder isn't processed
 async function syncAccount(account: SyncingAccount): Promise<void> {
     logger.info(`Syncing Account ID ${account.id}`);
 
@@ -33,10 +33,16 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
         if (error instanceof IMAPTooManyRequests) {
             logger.warn(`Too many requests, skipping account id ${account.id}. Error: ${error.message}`);
             return;
+        } else if (error instanceof IMAPGenericException) {
+            logger.error(`${error.message} for account id ${account.id}. Skipping account`);
+            return;
         }
         throw error;
     }
+
     const remoteFolders = await getAllIMAPFolders(imapClient);
+    await imapClient.logout();
+
     const localFolders = await getFoldersByUserAndAccount(account.user_id, account.id, false);
     let processedFolders: Folder[] = [];
 
