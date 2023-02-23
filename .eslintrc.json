@@ -3,7 +3,9 @@
         "node": true,
         "es2021": true
     },
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended"
+    ],
     "overrides": [
     ],
     "parser": "@typescript-eslint/parser",
@@ -23,6 +25,7 @@
             }
         ],
         "no-trailing-spaces": "error",
+        "indent": "warn",
         "@typescript-eslint/explicit-function-return-type": "warn"
     }
 }
