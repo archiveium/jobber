@@ -10,6 +10,7 @@ export interface Account {
     searchable: boolean
     created_at: EpochTimeStamp
     updated_at: EpochTimeStamp
+    provider_host: string;
 }
 
 export interface SyncingAccount {
@@ -17,7 +18,7 @@ export interface SyncingAccount {
     username: string;
     password: string;
     user_id: number;
-    provider_id: number;
+    provider_host: string;
 }
 
 export interface DeletedAccount {

@@ -6,11 +6,11 @@ import {
     IMAPUserAuthenticatedNotConnected,
 } from '../exception/imap';
 
-export async function buildClient(username: string, password: string): Promise<ImapFlow.ImapFlow> {
+export async function buildClient(username: string, password: string, host: string): Promise<ImapFlow.ImapFlow> {
     const client = new ImapFlow.ImapFlow({
         emitLogs: true,
         logger: false,
-        host: 'imap.gmail.com',
+        host,
         port: 993,
         secure: true,
         auth: {

@@ -25,7 +25,11 @@ export async function schedule(): Promise<void> {
     allSyncingAccounts.forEach(async (syncingAccount) => {
         let imapClient: ImapFlow;
         try {
-            imapClient = await buildClient(syncingAccount.username, syncingAccount.password);
+            imapClient = await buildClient(
+                syncingAccount.username,
+                syncingAccount.password,
+                syncingAccount.provider_host
+            );
         } catch (error) {
             if (error instanceof IMAPTooManyRequests) {
                 logger.error(`Too many requests for Account ID: ${syncingAccount.id}. Skipping account`);

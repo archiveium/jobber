@@ -7,7 +7,12 @@ import { insertS3Object } from '../s3/email';
 import { logger } from '../utils/logger';
 import { FolderDeleted, FolderDeletedOnRemote, FolderNotFound } from '../exception/folder';
 import { AccountDeleted, AccountSyncingPaused } from '../exception/account';
-import { IMAPAuthenticationFailed, IMAPGenericException, IMAPTooManyRequests } from '../exception/imap';
+import {
+    IMAPAuthenticationFailed,
+    IMAPGenericException,
+    IMAPTooManyRequests,
+    IMAPUserAuthenticatedNotConnected,
+} from '../exception/imap';
 import { getAccount, updateAccountSyncing } from '../database/account';
 import { acquireJobLock, deleteJob, getJob, parseEmailJobPayload, releaseJobLock } from '../database/job';
 import { getFolder } from '../database/folder';
@@ -29,7 +34,7 @@ export async function process(): Promise<void> {
         try {
             const folder = await getFolder(payloadData.folderId);
             const account = await getAccount(folder.user_id, folder.account_id);
-            const imapClient = await buildClient(account.username, account.password);
+            const imapClient = await buildClient(account.username, account.password, account.provider_host);
 
             // TODO Pass startSeq and endSeq from scheduler
             const startSeq = _.first(payloadData.messageNumbers)?.uid;
@@ -75,7 +80,10 @@ export async function process(): Promise<void> {
                 await updateAccountSyncing(payloadData.accountId, false);
                 await releaseJobLock(jobData.id);
                 // TODO send notification to user
-            } else if (error instanceof IMAPGenericException) {
+            } else if (
+                error instanceof IMAPGenericException ||
+                error instanceof IMAPUserAuthenticatedNotConnected
+            ) {
                 logger.error(`${error.message} for Job ID: ${jobData.id}. Skipping job`);
                 await releaseJobLock(jobData.id);
             } else if (error instanceof AccountSyncingPaused) {

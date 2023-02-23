@@ -5,9 +5,10 @@ import { AccountDeleted, AccountNotFound, AccountSyncingPaused } from '../except
 import { DatabaseDeleteFailed, DatabaseUpdateFailed } from '../exception/database';
 
 export function getAllSyncingAccounts(): Promise<SyncingAccount[]> {
-    return sql<SyncingAccount[]>`SELECT id, username, password, user_id, provider_id 
-    FROM accounts 
-    WHERE syncing = true AND deleted = false;`;
+    return sql<SyncingAccount[]>`SELECT a.id, a.username, a.password, a.user_id, p.host AS provider_host
+    FROM accounts a
+    INNER JOIN providers p ON a.provider_id = p.id
+    WHERE a.syncing = true AND a.deleted = false;`;
 }
 
 export function getAllDeletedAccounts(): Promise<DeletedAccount[]> {
@@ -17,7 +18,11 @@ export function getAllDeletedAccounts(): Promise<DeletedAccount[]> {
 }
 
 export async function getAccount(userId: number, accountId: number): Promise<Account> {
-    const accounts = await sql<Account[]>`SELECT * FROM accounts WHERE user_id = ${userId} AND id = ${accountId}`;
+    const accounts = await sql<Account[]>`SELECT a.*, p.host AS provider_host
+    FROM accounts a
+    INNER JOIN providers p ON a.provider_id = p.id
+    WHERE a.user_id = ${userId} AND a.id = ${accountId};`;
+
     if (accounts.length > 0) {
         const account = accounts[0];
         if (account.deleted) {
@@ -31,7 +36,7 @@ export async function getAccount(userId: number, accountId: number): Promise<Acc
     throw new AccountNotFound(`Account ${accountId} not found for User ID ${userId}`);
 }
 
-export async function updateAccountSyncing(id: number, syncing: boolean) {
+export async function updateAccountSyncing(id: number, syncing: boolean): Promise<void> {
     const result = await sql`UPDATE accounts 
     SET syncing = ${syncing} 
     WHERE id = ${id}`;

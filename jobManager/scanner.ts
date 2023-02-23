@@ -28,7 +28,7 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
 
     let imapClient: ImapFlow;
     try {
-        imapClient = await buildClient(account.username, account.password);
+        imapClient = await buildClient(account.username, account.password, account.provider_host);
     } catch (error) {
         if (error instanceof IMAPTooManyRequests) {
             logger.warn(`Too many requests, skipping account id ${account.id}. Error: ${error.message}`);
