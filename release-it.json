@@ -1,7 +1,8 @@
 {
   "git": {
     "commitMessage": "chore: release ${version}",
-    "requireCleanWorkingDir": false
+    "requireCleanWorkingDir": false,
+    "changelog": "git log --pretty=format:\"* %s (%h)\" ${from}...${to}"
   },
   "npm": {
     "publish": false,
