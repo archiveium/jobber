@@ -7,7 +7,7 @@ import { getFoldersByUserAndAccount, insertFolder, softDeleteFolder, updateFolde
 import { Folder } from '../interface/folder';
 import { ImapFlow, ListResponse } from 'imapflow';
 import _ from 'lodash';
-import { IMAPGenericException, IMAPTooManyRequests } from '../exception/imap';
+import { IMAPGenericException, IMAPTooManyRequests, IMAPUserAuthenticatedNotConnected } from '../exception/imap';
 
 export async function scanner(): Promise<void> {
     logger.info('Started running scanner');
@@ -33,7 +33,7 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
         if (error instanceof IMAPTooManyRequests) {
             logger.warn(`Too many requests, skipping account id ${account.id}. Error: ${error.message}`);
             return;
-        } else if (error instanceof IMAPGenericException) {
+        } else if (error instanceof IMAPGenericException || error instanceof IMAPUserAuthenticatedNotConnected) {
             logger.error(`${error.message} for account id ${account.id}. Skipping account`);
             return;
         }
@@ -49,6 +49,7 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
     for (let i = 0; i < remoteFolders.length; i++) {
         const syncedSavedFolder = getSyncedSavedFolder(localFolders, remoteFolders[i]);
         if (syncedSavedFolder) {
+            // TODO Compare only the folder name not path & store path separately
             const folderNameChanged = hasFolderNameChanged(syncedSavedFolder.name, remoteFolders[i].path);
             if (folderNameChanged) {
                 const updateResult = await updateFolderName(syncedSavedFolder.id, remoteFolders[i].path);
