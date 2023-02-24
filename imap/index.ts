@@ -4,6 +4,7 @@ import { ImapEmail } from '../interface/email';
 import { ImapFolderStatus, MessageNumber } from '../interface/imap';
 import _ from 'lodash';
 import { logger } from '../utils/logger';
+import { IMAPGenericException } from '../exception/imap';
 
 export async function getMessageNumbers(
     client: ImapFlow.ImapFlow,
@@ -22,6 +23,10 @@ export async function getMessageNumbers(
                 uid: message.uid,
                 size: message.size,
             });
+        }
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new IMAPGenericException(error.message);
         }
     } finally {
         lock.release();

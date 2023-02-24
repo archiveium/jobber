@@ -13,6 +13,7 @@ import {
     IMAPGenericException,
     IMAPTooManyRequests,
     IMAPUidValidityChanged,
+    IMAPUserAuthenticatedNotConnected,
 } from '../exception/imap';
 import { FolderDeletedOnRemote } from '../exception/folder';
 
@@ -40,7 +41,10 @@ export async function schedule(): Promise<void> {
                 await updateAccountSyncing(syncingAccount.id, false);
                 // TODO send notification to user
                 return;
-            } else if (error instanceof IMAPGenericException) {
+            } else if (
+                error instanceof IMAPGenericException ||
+                error instanceof IMAPUserAuthenticatedNotConnected
+            ) {
                 logger.error(`${error.message} for Account ID: ${syncingAccount.id}. Skipping account`);
                 // TODO Add logic to backoff for a while before attempting again
                 return;

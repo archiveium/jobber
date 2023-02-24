@@ -5,6 +5,7 @@ import {
     IMAPTooManyRequests,
     IMAPUserAuthenticatedNotConnected,
 } from '../exception/imap';
+import { logger } from '../utils/logger';
 
 export async function buildClient(username: string, password: string, host: string): Promise<ImapFlow.ImapFlow> {
     const client = new ImapFlow.ImapFlow({
@@ -34,6 +35,10 @@ export async function buildClient(username: string, password: string, host: stri
         }
         throw error;
     }
+
+    client.on('error', (error) => {
+        logger.error(JSON.stringify(error));
+    });
 
     return client;
 }
