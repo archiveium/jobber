@@ -12,6 +12,7 @@
     "dev": "nodemon --exec 'TZ=America/Toronto NODE_ENV=development node -r ts-node/register' ./index.ts -p tsconfig.json",
     "dev-s3explorer": "npx @smblitz/s3explorer --endpoint http://10.0.0.158:9000 --accessKeyId minio --secretAccessKey minioPassword",
     "lint": "eslint --ext .js,.ts .",
+    "lint-fix": "eslint --ext .js,.ts . --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Paritosh Bhatia",
