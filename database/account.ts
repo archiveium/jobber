@@ -5,7 +5,8 @@ import { AccountDeleted, AccountNotFound, AccountSyncingPaused } from '../except
 import { DatabaseDeleteFailed, DatabaseUpdateFailed } from '../exception/database';
 
 export function getAllSyncingAccounts(): Promise<SyncingAccount[]> {
-    return sql<SyncingAccount[]>`SELECT a.id, a.username, a.password, a.user_id, p.host AS provider_host
+    return sql<SyncingAccount[]>`SELECT a.id, a.username, a.password, a.user_id, 
+    p.host AS provider_host, p.name AS provider_name
     FROM accounts a
     INNER JOIN providers p ON a.provider_id = p.id
     WHERE a.syncing = true AND a.deleted = false;`;

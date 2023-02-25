@@ -17,6 +17,12 @@ export async function getFoldersByUserAndAccount(
         account_id = ${accountId}`;
 }
 
+export async function getAllFoldersByUserAndAccount(userId: number, accountId: number): Promise<Folder[]> {
+    return sql<Folder[]>`SELECT * 
+    FROM folders 
+    WHERE user_id = ${userId} and account_id = ${accountId}`;
+}
+
 export async function getDeletedFoldersByUserAndAccount(userId: number, accountId: number): Promise<Folder[]> {
     return sql<Folder[]>`SELECT * 
     FROM folders 
@@ -71,6 +77,13 @@ export function updateFolderName(id: number, name: string) {
 
 export async function softDeleteFolder(id: number): Promise<void> {
     const result = await sql`UPDATE folders SET deleted_remote = true WHERE id = ${id}`;
+    if (result.count !== 1) {
+        throw new DatabaseUpdateFailed(`Failed to update folder ${id}`);
+    }
+}
+
+export async function restoreFolder(id: number): Promise<void> {
+    const result = await sql`UPDATE folders SET deleted_remote = false WHERE id = ${id}`;
     if (result.count !== 1) {
         throw new DatabaseUpdateFailed(`Failed to update folder ${id}`);
     }

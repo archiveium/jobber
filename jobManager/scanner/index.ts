@@ -1,13 +1,14 @@
-import { logger } from '../utils/logger';
-import { getAllSyncingAccounts } from '../database/account';
-import { SyncingAccount } from '../interface/account';
-import { buildClient } from '../imap/builder';
-import { getAllIMAPFolders } from '../imap';
-import { getFoldersByUserAndAccount, insertFolder, softDeleteFolder, updateFolderName } from '../database/folder';
-import { Folder } from '../interface/folder';
-import { ImapFlow, ListResponse } from 'imapflow';
+import { logger } from '../../utils/logger';
+import { getAllSyncingAccounts } from '../../database/account';
+import { SyncingAccount } from '../../interface/account';
+import { buildClient } from '../../imap/builder';
+import { getAllIMAPFolders } from '../../imap';
+import { insertFolder, restoreFolder, softDeleteFolder, updateFolderName } from '../../database/folder';
+import { Folder } from '../../interface/folder';
+import { ImapFlow } from 'imapflow';
 import _ from 'lodash';
-import { IMAPGenericException, IMAPTooManyRequests, IMAPUserAuthenticatedNotConnected } from '../exception/imap';
+import { IMAPGenericException, IMAPTooManyRequests, IMAPUserAuthenticatedNotConnected } from '../../exception/imap';
+import { providerFactory } from './providerFactory';
 
 export async function scanner(): Promise<void> {
     logger.info('Started running scanner');
@@ -18,7 +19,6 @@ export async function scanner(): Promise<void> {
     });
 
     await Promise.all(promises);
-
     logger.info('Finished running scanner');
 }
 
@@ -43,14 +43,15 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
     const remoteFolders = await getAllIMAPFolders(imapClient);
     await imapClient.logout();
 
-    const localFolders = await getFoldersByUserAndAccount(account.user_id, account.id, false);
+    const provider = providerFactory(account.provider_name);
+    const localFolders = await provider.getAllSyncedLocalFolders(account.user_id, account.id);
     let processedFolders: Folder[] = [];
 
     for (let i = 0; i < remoteFolders.length; i++) {
-        const syncedSavedFolder = getSyncedSavedFolder(localFolders, remoteFolders[i]);
+        const syncedSavedFolder = provider.getSyncedLocalFolder(localFolders, remoteFolders[i]);
         if (syncedSavedFolder) {
             // TODO Compare only the folder name not path & store path separately
-            const folderNameChanged = hasFolderNameChanged(syncedSavedFolder.name, remoteFolders[i].path);
+            const folderNameChanged = provider.hasFolderNameChanged(syncedSavedFolder.name, remoteFolders[i].path);
             if (folderNameChanged) {
                 const updateResult = await updateFolderName(syncedSavedFolder.id, remoteFolders[i].path);
                 if (updateResult.count > 0) {
@@ -59,6 +60,10 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
                 } else {
                     logger.error(`Failed to rename folder id ${syncedSavedFolder.id}`);
                 }
+            } else if (syncedSavedFolder.deleted_remote) {
+                await restoreFolder(syncedSavedFolder.id);
+                delete remoteFolders[i];
+                logger.info(`Restored folder id ${syncedSavedFolder.id}`);
             } else {
                 delete remoteFolders[i];
             }
@@ -72,7 +77,6 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
             // @ts-ignore since type definations have the parameters wrong
             if (remoteFolders[i].status.messages > 0) {
                 // TODO Save name separately from remote folder path
-                logger.info(`Folder ${remoteFolders[i].name} doesn't exist in database`);
                 const insertedFolderId = await insertFolder({
                     account_id: account.id,
                     user_id: account.user_id,
@@ -92,24 +96,11 @@ async function syncAccount(account: SyncingAccount): Promise<void> {
 
     const remoteFolderDeletes = _.pullAllBy(localFolders, processedFolders);
     remoteFolderDeletes?.map(async deletedFolder => {
-        await softDeleteFolder(deletedFolder.id);
-        logger.info(`Soft deleted folder ${deletedFolder.id}`);
+        if (!deletedFolder.deleted_remote) {
+            await softDeleteFolder(deletedFolder.id);
+            logger.info(`Soft deleted folder ${deletedFolder.id}`);
+        }
     });
 
     logger.info(`Finished syncing account ID ${account.id}`);
-}
-
-function hasFolderNameChanged(savedFolderName: string, remoteFolderName: string): boolean {
-    return savedFolderName.toLowerCase() !== remoteFolderName.toLowerCase();
-}
-
-function getSyncedSavedFolder(localFolders: Folder[], remoteFolder: ListResponse): Folder|undefined {
-    // @ts-ignore since type definations have the parameters wrong
-    if (remoteFolder.status) {
-        // @ts-ignore since type definations have the parameters wrong
-        return _.find(localFolders, function(o) {
-            // @ts-ignore since type definations have the parameters wrong
-            return o.status_uidvalidity === Number(remoteFolder.status.uidValidity);
-        });
-    }
 }

@@ -18,6 +18,7 @@ export interface SyncingAccount {
     username: string;
     password: string;
     user_id: number;
+    provider_name: string;
     provider_host: string;
 }
 
